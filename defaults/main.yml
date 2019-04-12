@@ -1,2 +1,22 @@
 ---
 # defaults file for egeneralov.timescaledb
+
+pgdg_version: 9.6
+pgdg_supported_versions:
+  - 9.6
+  - 10
+  - 11
+
+supported_distribution:
+  Debian:
+    - stretch
+    - jessie
+
+tdb_postgresql_conf:
+  - { "k": "shared_preload_libraries", "v": "'timescaledb'" }
+  - { "k": "timescaledb.telemetry_level", "v": "off" }
+
+pgdg_users:
+  - user: root
+    password: root
+    database: root

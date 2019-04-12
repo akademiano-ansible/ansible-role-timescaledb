@@ -1,2 +1,63 @@
 ---
 # tasks file for egeneralov.timescaledb
+
+- name: check distribution
+  assert:
+    that:
+      - "ansible_distribution in supported_distribution.keys()"
+      - "ansible_distribution_release in supported_distribution[ansible_distribution]"
+    fail_msg: "Check distribution/release requirements"
+    success_msg: "Supported distribution: {{ ansible_distribution }} {{ ansible_distribution_release }}"
+
+- name: "assert if {{ pgdg_version }} is supported by role"
+  assert:
+    that:
+      - "pgdg_version in pgdg_supported_versions"
+    fail_msg: "{{ pgdg_version }} is not supported version for timescaledb"
+    success_msg: "Provisioning timescaledb over postgresql=={{ pgdg_version }}"
+
+- name: egeneralov.postgresql
+  include_role:
+    name: egeneralov.postgresql
+
+- name: import timescaledb repository key
+  apt_key:
+    url: https://packagecloud.io/timescale/timescaledb/gpgkey
+  register: tdb_repo_key
+
+- name: add timescaledb repository
+  apt_repository:
+    repo: "deb https://packagecloud.io/timescale/timescaledb/debian/ {{ ansible_distribution_release }} main"
+    filename: timescaledb
+  register: tdb_repo
+
+- name: update apt cache
+  apt:
+    update_cache: "{% if tdb_repo is changed or tdb_repo_key is changed %}yes{% else %}no{% endif %}"
+
+- name: install timescaledb
+  apt:
+    name:
+      - "timescaledb-postgresql-{{ pgdg_version }}"
+
+- name: postgresql.conf
+  lineinfile:
+    path: "/etc/postgresql/{{ pgdg_version }}/main/postgresql.conf"
+    regexp: '#?{{ item.k }} =.*'
+    line: '{{ item.k }} = {{ item.v }}'
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ tdb_postgresql_conf }}"
+  register: tdb_conf
+
+- name: (re)start postgresql
+  systemd:
+    name: "postgresql@{{ pgdg_version }}-main.service"
+    state: "{% if tdb_conf is changed %}restarted{% else %}started{% endif %}"
+
+- name: create extension
+  become: true
+  become_user: postgres
+  postgresql_ext:
+    name: timescaledb
+    db: "{{ item.database }}"
+  with_items: "{{ pgdg_users }}"
