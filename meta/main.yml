@@ -8,6 +8,13 @@ galaxy_info:
     versions:
     - stretch
     - jessie
+  - name: Ubuntu
+    versions:
+    - bionic
+    - xenial
+    - trusty
+    - cosmic
+    - disco
   galaxy_tags:
     - timescaledb
 dependencies:

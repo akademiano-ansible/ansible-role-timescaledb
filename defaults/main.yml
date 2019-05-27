@@ -11,6 +11,8 @@ supported_distribution:
   Debian:
     - stretch
     - jessie
+  Ubuntu:
+    - bionic
 
 tdb_postgresql_conf:
   - { "k": "shared_preload_libraries", "v": "'timescaledb'" }
@@ -20,3 +22,8 @@ pgdg_users:
   - user: root
     password: root
     database: root
+
+repo_url:
+  Debian: "deb https://packagecloud.io/timescale/timescaledb/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main"
+  Ubuntu: "deb http://ppa.launchpad.net/timescale/timescaledb-ppa/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main"
+

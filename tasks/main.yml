@@ -24,10 +24,17 @@
   apt_key:
     url: https://packagecloud.io/timescale/timescaledb/gpgkey
   register: tdb_repo_key
+  when: ansible_distribution == "Debian"
+
+- name: Add an apt key by id from a keyserver
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: "0x55ee6bf7698e3d58d72c0dd9ecb3980cc59e610b"
+  when: ansible_distribution == "Ubuntu"
 
 - name: add timescaledb repository
   apt_repository:
-    repo: "deb https://packagecloud.io/timescale/timescaledb/debian/ {{ ansible_distribution_release }} main"
+    repo: "{{ repo_url[ansible_distribution] }}"
     filename: timescaledb
   register: tdb_repo
 
