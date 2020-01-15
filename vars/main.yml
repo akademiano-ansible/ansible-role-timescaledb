@@ -1,2 +1,15 @@
 ---
 # vars file for egeneralov.timescaledb
+
+pgdg_supported_versions:
+  - 10
+  - 11
+
+tdb_base_packages:
+  - "timescaledb-postgresql"
+
+tdb_repo_url:
+  Debian: "deb https://packagecloud.io/timescale/timescaledb/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main"
+  Ubuntu: "deb http://ppa.launchpad.net/timescale/timescaledb-ppa/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main"
+
+tdb_repo_key_url: "https://packagecloud.io/timescale/timescaledb/gpgkey"

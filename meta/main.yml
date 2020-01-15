@@ -5,17 +5,7 @@ galaxy_info:
   min_ansible_version: 2.4
   platforms:
   - name: Debian
-    versions:
-    - stretch
-    - jessie
   - name: Ubuntu
-    versions:
-    - bionic
-    - xenial
-    - trusty
-    - cosmic
-    - disco
   galaxy_tags:
     - timescaledb
-dependencies:
-  - egeneralov.postgresql
+dependencies: []
