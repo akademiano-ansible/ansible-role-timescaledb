@@ -1,49 +1,47 @@
 ---
 # tasks file for egeneralov.timescaledb
 
-- name: check distribution
-  assert:
-    that:
-      - "ansible_distribution in supported_distribution.keys()"
-      - "ansible_distribution_release in supported_distribution[ansible_distribution]"
-    fail_msg: "Check distribution/release requirements"
-    success_msg: "Supported distribution: {{ ansible_distribution }} {{ ansible_distribution_release }}"
-
-- name: "assert if {{ pgdg_version }} is supported by role"
+- name: "Timescaledb | Assert | if {{ pgdg_version }} is supported by role"
   assert:
     that:
       - "pgdg_version in pgdg_supported_versions"
     fail_msg: "{{ pgdg_version }} is not supported version for timescaledb"
     success_msg: "Provisioning timescaledb over postgresql=={{ pgdg_version }}"
 
-- name: import timescaledb repository key
+- name: Timescaledb | Repository | Import key
   apt_key:
     url: "{{ tdb_repo_key_url }}"
   register: tdb_repo_key
   when: ansible_distribution == "Debian"
+  become: yes
 
-- name: Add an apt key by id from a keyserver
+- name: Timescaledb | Repository | Import key
   apt_key:
     keyserver: keyserver.ubuntu.com
     id: "0x55ee6bf7698e3d58d72c0dd9ecb3980cc59e610b"
   when: ansible_distribution == "Ubuntu"
+  become: yes
 
-- name: add timescaledb repository
+- name: Timescaledb | Repository |  Add repository
   apt_repository:
     repo: "{{ tdb_repo_url[ansible_distribution] }}"
     filename: timescaledb
   register: tdb_repo
+  become: yes
 
-- name: update apt cache
+- name: Timescaledb | Install | Apt update
   apt:
     update_cache: "{% if tdb_repo is changed or tdb_repo_key is changed %}yes{% else %}no{% endif %}"
+  become: yes
 
-- name: install timescaledb
+- name: Timescaledb | Install | Install
   apt:
     name: "{{ item }}-{{ pgdg_version }}"
   loop: "{{ tdb_base_packages  }}"
+  become: yes
+  notify: postgresql restart
 
-- name: postgresql.conf
+- name: Timescaledb | Configure | postgresql.conf
   lineinfile:
     path: "/etc/postgresql/{{ pgdg_version }}/main/postgresql.conf"
     regexp: '#?{{ item.k }} =.*'
@@ -51,16 +49,24 @@
     state: "{{ item.state | default('present') }}"
   with_items: "{{ tdb_postgresql_conf }}"
   register: tdb_conf
+  become: yes
+  notify: postgresql restart
 
-- name: (re)start postgresql
-  systemd:
-    name: "postgresql@{{ pgdg_version }}-main.service"
-    state: "{% if tdb_conf is changed %}restarted{% else %}started{% endif %}"
+- name: "Postgresql | Configure | postgresql.conf | shared_preload_libraries"
+  lineinfile:
+    path: "{{ pgdg_postgresql_conf_path }}"
+    regexp: "#?shared_preload_libraries =.*"
+    line: "shared_preload_libraries = '{{ pgdg_shared_preload_libraries |  join(\", \") }}'"
+    state: present
+  register: pgdg_conf_shared_preload_libraries
+  notify: postgresql restart
+  become: yes
 
-- name: create extension
+- name: Timescaledb | Manage | Extension | Create
   become: true
   become_user: postgres
   postgresql_ext:
     name: timescaledb
     db: "{{ item.database }}"
   with_items: "{{ pgdg_users }}"
+  when: item.database is defined

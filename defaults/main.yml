@@ -3,6 +3,11 @@
 
 pgdg_version: 11
 
+pgdg_shared_preload_libraries:
+  - pg_stat_statements
+  - pg_stat_kcache
+  - timescaledb
+
 tdb_postgresql_conf:
-  - { "k": "shared_preload_libraries", "v": "'timescaledb'" }
   - { "k": "timescaledb.telemetry_level", "v": "off" }
+

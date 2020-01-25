@@ -1,2 +1,13 @@
 ---
 # handlers file for egeneralov.timescaledb
+- name: postgresql restart
+  become: yes
+  service:
+    name: postgresql
+    state: restarted
+
+- name: postgresql reload
+  become: yes
+  service:
+    name: postgresql
+    state: reloaded
